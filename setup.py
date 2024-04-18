@@ -2,13 +2,14 @@ from setuptools import setup, find_packages
 
 setup(
     name='urltotext',
-    version='0.3.1',
+    version='0.3.2',
     packages=find_packages(),
     install_requires=[
         "requests",
         "bs4",
         "langdetect",
         "selenium",
+        "aiohttp"
     ],
     # Additional metadata about your package.
     author='Chinmay Shrivastava',

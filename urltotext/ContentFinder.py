@@ -2,9 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-# from readability import Document
-from urllib.parse import urljoin
 from langdetect import detect
+import aiohttp
 
 def contentfinder(url, driver):
 
@@ -50,6 +49,56 @@ def contentfinder(url, driver):
     #     article = BeautifulSoup(doc.summary(html_partial=True), "html.parser")
 
     return article, title, lang
+
+async def async_contentfinder(url, driver):
+
+    headers = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:55.0) Gecko/20100101 Firefox/55.0',
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            html = await response.text()
+            soup = BeautifulSoup(html, "html.parser")
+
+            try:
+                if "javascript" in soup.find("html").get("class", []):
+                    driver.get(url)
+                    html = driver.page_source
+                    print("Javascript detected")
+                else:
+                    html = requests.get(url, headers=headers)
+                    print("Javascript not detected")
+            except Exception as e:
+                print("Error in fetching the page" + str(e))
+                return None, None, None
+
+            soup = BeautifulSoup(html.text, "html.parser")
+
+            article = None
+            t = soup.find('title')
+            title = t.string if t is not None else None
+            lang = detect(soup.body.get_text())
+
+            # Look for the <article>, <div>, or <section> tags that contain the main article content
+            article = soup.find("article") or soup.find("div", class_="article")
+
+            # If the <article>, <div>, or <section> tags are not found, look for elements with specific CSS classes
+            if not article:
+                article = soup.find("div", class_="entry-content") or soup.find("div", class_="main-content")
+
+            # If the <article>, <div>, or <section> tags are not found, look for the <main> tag
+            if not article:
+                article = soup.find("main")
+
+            # If the <article>, <div>, <section>, or <main> tags are not found, use a content extraction library
+            # if not article:
+            #     doc = Document(response.text)
+            #     article = BeautifulSoup(doc.summary(html_partial=True), "html.parser")
+
+            return article, title, lang
+
+
 
 # prints the article content, given that the article content is not None
 def printarticle(article):
@@ -127,24 +176,51 @@ class ContentFinder:
         self.content[url]["title"] = title
         self.content[url]["lang"] = lang
 
+    async def async_scrape_url(self, url):
+        self.content[url] = {}
+        article, title, lang = await async_contentfinder(url, self.driver)
+        self.content[url]["article"] = article
+        self.content[url]["title"] = title
+        self.content[url]["lang"] = lang
+
     def article_meta(self, url):
         if url not in self.content:
             self.scrape_url(url)
+        return self.content[url]["article"], self.content[url]["title"], self.content[url]["lang"]
+    
+    async def async_article_meta(self, url):
+        if url not in self.content:
+            await self.async_scrape_url(url)
         return self.content[url]["article"], self.content[url]["title"], self.content[url]["lang"]
 
     def get_article(self, url):
         if url not in self.content:
             self.scrape_url(url)
         return self.content[url]["article"]
+    
+    async def async_get_article(self, url):
+        if url not in self.content:
+            await self.async_scrape_url(url)
+        return self.content[url]["article"]
 
     def get_title(self, url):
         if url not in self.content:
             self.scrape_url(url)
         return self.content[url]["title"]
+    
+    async def async_get_title(self, url):
+        if url not in self.content:
+            await self.async_scrape_url(url)
+        return self.content[url]["title"]
 
     def get_lang(self, url):
         if url not in self.content:
             self.scrape_url(url)
+        return self.content[url]["lang"]
+    
+    async def async_get_lang(self, url):
+        if url not in self.content:
+            await self.async_scrape_url(url)
         return self.content[url]["lang"]
 
     def print_article(self, url):
@@ -152,9 +228,19 @@ class ContentFinder:
             self.scrape_url(url)
         printarticle(self.content[url]["article"])
 
+    async def async_print_article(self, url):
+        if url not in self.content:
+            await self.async_scrape_url(url)
+        printarticle(self.content[url]["article"])
+
     def get_components(self, url):
         if url not in self.content:
             self.scrape_url(url)
+        return breakarticleintocomponents(self.content[url]["article"])
+    
+    async def async_get_components(self, url):
+        if url not in self.content:
+            await self.async_scrape_url(url)
         return breakarticleintocomponents(self.content[url]["article"])
     
     def flush_data(self):
