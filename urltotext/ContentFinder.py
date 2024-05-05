@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+# from selenium import webdriver
+# from selenium.webdriver.chrome.options import Options
 from langdetect import detect
 import aiohttp
 
@@ -14,13 +14,13 @@ def contentfinder(url, driver):
     soup = BeautifulSoup(response.text, "html.parser")
 
     try:
-        if "javascript" in soup.find("html").get("class", []):
-            driver.get(url)
-            html = driver.page_source
-            print("Javascript detected")
-        else:
-            html = requests.get(url, headers=headers)
-            print("Javascript not detected")
+        # if "javascript" in soup.find("html").get("class", []):
+        #     driver.get(url)
+        #     html = driver.page_source
+        #     print("Javascript detected")
+        # else:
+        html = requests.get(url, headers=headers)
+        # print("Javascript not detected")
     except Exception as e:
         print("Error in fetching the page" + str(e))
         return None, None, None
@@ -62,13 +62,12 @@ async def async_contentfinder(url, driver):
             soup = BeautifulSoup(html, "html.parser")
 
             try:
-                if "javascript" in soup.find("html").get("class", []):
-                    driver.get(url)
-                    html = driver.page_source
-                    print("Javascript detected")
-                else:
-                    html = requests.get(url, headers=headers)
-                    print("Javascript not detected")
+                # if "javascript" in soup.find("html").get("class", []):
+                    # driver.get(url)
+                    # html = driver.page_source
+                    # print("Javascript detected")
+                # else:
+                html = requests.get(url, headers=headers)
             except Exception as e:
                 print("Error in fetching the page" + str(e))
                 return None, None, None
@@ -137,13 +136,14 @@ def breakarticleintocomponents(article):
 
 class ContentFinder:
     def __init__(self):
-        self.options = Options()
-        self.options.add_argument('--headless')
-        self.driver = webdriver.Chrome(options=self.options)
+        # self.options = Options()
+        # self.options.add_argument('--headless')
+        # self.driver = webdriver.Chrome(options=self.options)
+        self.driver = None
         self.content = {}
 
-    def __del__(self):
-        self.driver.quit()
+    # def __del__(self):
+    #     self.driver.quit()
 
     def __str__(self):
         return f"ContentFinder()"
@@ -246,10 +246,10 @@ class ContentFinder:
     def flush_data(self):
         self.content = {}
 
-if __name__ == "__main__":
-    options = Options()
-    options.add_argument('--headless')
-    driver = webdriver.Chrome(options=options)
-    url = "https://www.freecodecamp.org/news/web-scraping-in-javascript-with-puppeteer/"
-    article, title, lang = contentfinder(url, driver)
-    print(article.text)
+# if __name__ == "__main__":
+#     options = Options()
+#     options.add_argument('--headless')
+#     driver = webdriver.Chrome(options=options)
+#     url = "https://www.freecodecamp.org/news/web-scraping-in-javascript-with-puppeteer/"
+#     article, title, lang = contentfinder(url, driver)
+#     print(article.text)
